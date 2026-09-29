@@ -509,3 +509,22 @@
 | 6절 미확인 목록 | 추가. `unit_code` 문자열 정렬의 실제 순서 (BR-16) | legacy/item-bank-php/search.php:293-299, db/mariadb/init/01-schema.sql:13 |
 | BR-01, BR-17, BR-19, BR-29 | 변경 없음. CX-10 · CX-13 · CX-14 · CX-15 와 달랐지만 이 문서 쪽이 맞음 | db/mariadb/init/01-schema.sql:70, legacy/item-bank-php/search.php:268-273, legacy/item-bank-php/search.php:337-344, legacy/item-bank-php/register.php:94 |
 | `inc/db.php` | 변경 없음. 읽어 보니 DB 연결과 HTML 이스케이프뿐이고 규칙으로 올릴 조건문이 없다 | legacy/item-bank-php/inc/db.php:7-37 |
+
+## 이관 회고
+
+대상: 문항 검색 `search.php` → `modern/api` 의 `GET /api/items/search` (2026-09-29).
+동작 보존 테스트 22케이스는 모두 통과했다. 아래는 통과한 뒤 규칙별 대조와 두 서버에 같은 요청을 보내 찾은 차이다.
+새 구현 경로는 `modern/api/src/main/java/com/example/item/` 기준이다.
+
+| 바뀐 지점 | 레거시 동작 | AI가 만든 동작 | 테스트가 잡았나 | 다음에 막을 방법 |
+|---|---|---|---|---|
+| 배열과 일반 파라미터를 함께 보냄 (`level[]=3&level=2`, BR-03) | 뒤에 온 값(2)으로 검색 (legacy/item-bank-php/search.php:61-64) | 순서와 상관없이 `level[]` 값(3)으로 검색 (ItemSearchCondition.java:88-91) | 못 잡음 | 배열 케이스를 세울 때 일반 파라미터와 섞은 순서 두 가지를 함께 세운다 |
+| 키가 있는 배열 파라미터 (`level[0]=2`, `level[a]=5`, BR-03) | 첫 값으로 검색 (legacy/item-bank-php/search.php:63) | 파라미터를 못 읽어 난이도를 비운 것으로 처리, 20건 (ItemSearchCondition.java:88) | 못 잡음 | 규칙 비고에 PHP 가 배열로 받는 표기(`[]`, `[0]`, `[키]`)를 모두 적고 표기마다 케이스를 세운다 |
+| 키워드에 `\` 포함 (`q=\%&level=5`, BR-04 · BR-06) | `\` 가 이스케이프로 동작해 글자 `%` 를 찾음, 1건 (legacy/item-bank-php/search.php:97-98) | 0건 (ItemSearchSpecifications.java:46-47) | 못 잡음 | 와일드카드 케이스에 `\` 를 넣은 케이스를 추가하고, 비고에 DB 의 LIKE 기본 이스케이프 문자를 적는다 |
+| GET 이 아닌 요청 (POST) | 200 으로 검색 실행 (legacy/item-bank-php/search.php:722) | 500 (ItemSearchController.java:23) | 못 잡음 | 계획 단계에서 허용할 HTTP 메서드와 그 밖의 메서드의 상태 코드를 정하고 컨트롤러 테스트로 고정한다 |
+| DB · 조회 오류 | 200 에 오류 문구 (legacy/item-bank-php/search.php:714-719, 726-729) | 500 에 JSON 오류 본문 | 못 잡음 (스냅샷은 정상 응답만 찍음) | 오류 시 응답을 규칙으로 올리고, 레거시와 다르게 갈지 계획 단계에서 결정해 적는다 |
+| 입력값 경고 (BR-05 · 06 · 08 · 11 · 13 · 15 · 17 · 19 · 35) | 경고 목록을 결과 위에 표시 (legacy/item-bank-php/search.php:510-516, 652) | 응답에 경고 없음 (계획에서 넣지 않기로 결정) | 못 잡음 (정규화 결과에 경고가 없음) | 이관 범위에 넣을 규칙이면 정규화 함수가 경고를 읽게 한 뒤 베이스라인을 찍는다 |
+| 선택 목록 · 조건 요약 · 페이지 링크 (BR-34 외) | 화면에 함께 출력 (legacy/item-bank-php/search.php:354-366, 392-504, 684-703) | 응답에 없음 | 못 잡음 (정규화가 표 · 건수 · 문구만 읽음) | 계획에 "옮기지 않는 것" 목록을 따로 두고 화면 쪽 대체 방법을 함께 적는다 |
+| 태그 표시 (BR-21) | 쉼표로 이은 문자열. 이름에 쉼표가 있으면 쪼개지고 길면 잘릴 수 있음 (db/mariadb/init/01-schema.sql:64-67) | 태그 이름 배열 (ItemSearchRow.java:21) | 못 잡음 (시드에 해당 데이터 없음) — 확인 필요 | 확인 필요 항목으로 남기고, 시드에 없는 데이터 모양은 규칙 비고에 적는다 |
+| 소문자 단원 코드 (`m5-1`, BR-07) | DB 콜레이션으로 일치, 5건 | 같음 | 잡음 (H2 단위 테스트로는 확인 불가, MariaDB 대상 실행에서만 확인) | DB 설정에 기대는 동작은 비고에 "코드가 아니라 DB 동작"이라고 적고 실제 DB 대상 케이스를 세운다 |
+| 난이도 미지정 검색 (BR-09) | 난이도 5 를 빼고 검색 (legacy/item-bank-php/search.php:213-216) | 같음 (ItemSearchSpecifications.java:29-31) | 잡음 (차이 없음) | 규칙 비고에 "주석과 다름"을 적어 두고 경계 케이스를 세운다 |

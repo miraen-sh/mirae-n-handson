@@ -26,4 +26,11 @@ public class UnitService {
         log.debug("listed {} units", units.size());
         return units;
     }
+
+    /** 단원별 공개({@code status='A'}) 문항 수 — 학년, 코드 순. 문항이 없는 단원은 0. */
+    public List<UnitItemCountResponse> listUnitItemCounts() {
+        List<UnitItemCountResponse> counts = unitRepository.countItemsByUnit(ItemStatus.ACTIVE);
+        log.debug("counted items for {} units", counts.size());
+        return counts;
+    }
 }

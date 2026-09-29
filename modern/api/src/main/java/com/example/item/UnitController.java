@@ -21,4 +21,10 @@ public class UnitController {
     public List<UnitResponse> listUnits() {
         return unitService.listUnits();
     }
+
+    /** {@code GET /api/units/item-counts} — 단원별 공개 문항 수. */
+    @GetMapping("/item-counts")
+    public List<UnitItemCountResponse> listUnitItemCounts() {
+        return unitService.listUnitItemCounts();
+    }
 }

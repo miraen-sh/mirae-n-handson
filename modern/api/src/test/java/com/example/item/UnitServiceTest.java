@@ -1,6 +1,7 @@
 package com.example.item;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -41,5 +42,19 @@ class UnitServiceTest {
         when(unitRepository.findAllByOrderByGradeAscCodeAsc()).thenReturn(List.of());
 
         assertThat(unitService.listUnits()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("listUnitItemCounts: status='A' 로만 저장소에 묻고 순서를 유지한다")
+    void listUnitItemCountsQueriesActiveStatusOnly() {
+        when(unitRepository.countItemsByUnit(ItemStatus.ACTIVE)).thenReturn(List.of(
+            new UnitItemCountResponse(1, "M5-1", "분수의 덧셈과 뺄셈", 5, 3),
+            new UnitItemCountResponse(4, "M6-1", "분수의 나눗셈", 6, 0)));
+
+        List<UnitItemCountResponse> counts = unitService.listUnitItemCounts();
+
+        assertThat(counts).extracting(UnitItemCountResponse::code).containsExactly("M5-1", "M6-1");
+        assertThat(counts).extracting(UnitItemCountResponse::itemCount).containsExactly(3L, 0L);
+        verify(unitRepository).countItemsByUnit("A");
     }
 }

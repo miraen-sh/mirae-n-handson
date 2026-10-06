@@ -1,5 +1,6 @@
 package com.example.item;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -37,7 +38,13 @@ public record ItemSearchCondition(
     private static final String PARAM_SORT = "sort";
     private static final String PARAM_DIR = "dir";
     private static final String PARAM_PAGE = "page";
-    private static final String ARRAY_SUFFIX = "[]";
+    private static final String ARRAY_OPEN = "[";
+    /** {@code [키]} 와 그 뒤의 나머지. PHP 처럼 키는 첫 {@code ]} 까지다. */
+    private static final Pattern ARRAY_KEY = Pattern.compile("^\\[([^\\]]*)\\](.*)$", Pattern.DOTALL);
+    /** PHP 가 정수 인덱스로 바꾸는 키: 앞자리 0 이 없는 10진수. */
+    private static final Pattern PHP_INT_KEY = Pattern.compile("^(0|-?[1-9][0-9]{0,17})$");
+    private static final long PHP_INDEX_STEP = 1;
+    private static final String PHP_ARRAY_STRING = "Array";
 
     private static final String SORT_ID = "id";
     private static final String SORT_TITLE = "title";
@@ -82,18 +89,56 @@ public record ItemSearchCondition(
     }
 
     /**
-     * 파라미터 값 하나를 꺼낸다. 배열({@code name[]})로 오면 첫 값, 같은 이름이 반복되면 마지막 값을 쓴다(PHP 와 같다).
+     * 파라미터 값 하나를 꺼낸다. 배열({@code name[]} · {@code name[0]} · {@code name[a]})로 오면 첫 값,
+     * 같은 이름이 반복되면 마지막 값을 쓴다(PHP 와 같다).
      */
     private static String param(Map<String, List<String>> params, String name, String defaultValue) {
-        List<String> array = params.get(name + ARRAY_SUFFIX);
-        if (array != null && !array.isEmpty()) {
-            return nullToEmpty(array.get(0));
+        String arrayValue = firstArrayValue(params, name);
+        if (arrayValue != null) {
+            return arrayValue;
         }
         List<String> values = params.get(name);
         if (values != null && !values.isEmpty()) {
             return nullToEmpty(values.get(values.size() - 1));
         }
         return defaultValue;
+    }
+
+    /**
+     * {@code name[키]} 로 온 값을 PHP 배열처럼 모아 첫 원소를 돌려준다. 배열로 온 값이 없으면 {@code null}.
+     * 빈 키는 다음 정수 인덱스, 정수 모양 키는 정수 인덱스로 쓰고, 같은 키가 다시 오면 자리는 두고 값만 바꾼다.
+     * 원소가 다시 배열({@code name[a][b]})이면 PHP 의 문자열 변환 결과인 {@code "Array"} 를 쓴다.
+     * 키 이름이 서로 다른 파라미터끼리 섞인 순서는 알 수 없으므로 키가 처음 나온 순서대로 모은다.
+     */
+    private static String firstArrayValue(Map<String, List<String>> params, String name) {
+        String prefix = name + ARRAY_OPEN;
+        Map<String, String> phpArray = new LinkedHashMap<>();
+        long nextIndex = 0;
+        for (Map.Entry<String, List<String>> entry : params.entrySet()) {
+            if (!entry.getKey().startsWith(prefix)) {
+                continue;
+            }
+            Matcher matcher = ARRAY_KEY.matcher(entry.getKey().substring(name.length()));
+            if (!matcher.matches()) {
+                continue;
+            }
+            String subKey = matcher.group(1);
+            boolean nested = matcher.group(2).startsWith(ARRAY_OPEN);
+            for (String value : entry.getValue()) {
+                String element = nested ? PHP_ARRAY_STRING : nullToEmpty(value);
+                if (subKey.isEmpty()) {
+                    phpArray.put(String.valueOf(nextIndex), element);
+                    nextIndex += PHP_INDEX_STEP;
+                } else if (PHP_INT_KEY.matcher(subKey).matches()) {
+                    long index = Long.parseLong(subKey);
+                    phpArray.put(String.valueOf(index), element);
+                    nextIndex = Math.max(nextIndex, index + PHP_INDEX_STEP);
+                } else {
+                    phpArray.put(subKey, element);
+                }
+            }
+        }
+        return phpArray.isEmpty() ? null : phpArray.values().iterator().next();
     }
 
     private static String nullToEmpty(String value) {

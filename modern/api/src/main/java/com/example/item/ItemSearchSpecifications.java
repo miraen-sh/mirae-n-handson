@@ -14,6 +14,8 @@ final class ItemSearchSpecifications {
     static final int DEFAULT_LEVEL_UPPER_BOUND = 5;
 
     private static final String LIKE_WILDCARD = "%";
+    /** MariaDB 기본 LIKE 이스케이프 문자. 레거시(mysqli)는 이 기본값으로 조회했다. */
+    private static final char LIKE_ESCAPE = '\\';
 
     private ItemSearchSpecifications() {
     }
@@ -39,12 +41,16 @@ final class ItemSearchSpecifications {
         return (root, query, cb) -> cb.equal(root.get("status"), status);
     }
 
-    /** 키워드의 {@code %} · {@code _} 는 이스케이프하지 않는다 — 와일드카드로 동작한다. */
+    /**
+     * 키워드의 {@code %} · {@code _} 는 이스케이프하지 않는다 — 와일드카드로 동작한다.
+     * {@code \} 는 레거시처럼 이스케이프 문자로 동작한다. ESCAPE 를 지정하지 않으면 Hibernate 가 {@code \} 를
+     * 일반 문자로 바꿔 렌더링하므로 명시한다.
+     */
     private static Specification<Item> titleOrStemContains(String keyword) {
         String pattern = LIKE_WILDCARD + keyword + LIKE_WILDCARD;
         return (root, query, cb) -> cb.or(
-            cb.like(root.get("title"), pattern),
-            cb.like(root.get("stem"), pattern));
+            cb.like(root.get("title"), pattern, LIKE_ESCAPE),
+            cb.like(root.get("stem"), pattern, LIKE_ESCAPE));
     }
 
     private static Specification<Item> hasUnitCode(String unitCode) {

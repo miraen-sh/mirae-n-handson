@@ -1,5 +1,45 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`item-bank · 단원 목록(units.php) > [BR-32 BR-33] 단원 전체 — 공개 문항 수 · 0건 단원 포함 · 학년 · 코드 순 1`] = `
+{
+  "count": 5,
+  "message": null,
+  "rows": [
+    {
+      "code": "M5-1",
+      "grade": 5,
+      "item_count": 6,
+      "name": "분수의 덧셈과 뺄셈",
+    },
+    {
+      "code": "M5-2",
+      "grade": 5,
+      "item_count": 5,
+      "name": "분수의 곱셈",
+    },
+    {
+      "code": "M5-3",
+      "grade": 5,
+      "item_count": 5,
+      "name": "소수의 곱셈",
+    },
+    {
+      "code": "M6-1",
+      "grade": 6,
+      "item_count": 5,
+      "name": "분수의 나눗셈",
+    },
+    {
+      "code": "M6-2",
+      "grade": 6,
+      "item_count": 5,
+      "name": "비와 비율",
+    },
+  ],
+  "status": 200,
+}
+`;
+
 exports[`item-bank · 문항 검색(search.php) > 경계값 > [BR-04 BR-06 BR-35] 키워드 한 글자 — 경고만 하고 검색은 실행 1`] = `
 {
   "count": 4,

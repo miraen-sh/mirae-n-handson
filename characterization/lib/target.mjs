@@ -20,7 +20,7 @@ export const MODULES = Object.keys(DEFAULT_BASE_URLS);
  */
 export const PATH_ALIASES = {
   '/search.php': '/api/items/search',
-  '/units.php': '/api/units',
+  '/units.php': '/api/units/item-counts',
 };
 
 /** 모듈의 대상 주소(끝에 슬래시 없음). */

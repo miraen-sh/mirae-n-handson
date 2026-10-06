@@ -48,8 +48,8 @@ class UnitServiceTest {
     @DisplayName("listUnitItemCounts: status='A' 로만 저장소에 묻고 순서를 유지한다")
     void listUnitItemCountsQueriesActiveStatusOnly() {
         when(unitRepository.countItemsByUnit(ItemStatus.ACTIVE)).thenReturn(List.of(
-            new UnitItemCountResponse(1, "M5-1", "분수의 덧셈과 뺄셈", 5, 3),
-            new UnitItemCountResponse(4, "M6-1", "분수의 나눗셈", 6, 0)));
+            new UnitItemCountResponse("M5-1", "분수의 덧셈과 뺄셈", 5, 3),
+            new UnitItemCountResponse("M6-1", "분수의 나눗셈", 6, 0)));
 
         List<UnitItemCountResponse> counts = unitService.listUnitItemCounts();
 

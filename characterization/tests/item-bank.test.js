@@ -1,4 +1,4 @@
-// 동작 보존 테스트 — 문항 은행(item-bank)의 문항 검색 search.php
+// 동작 보존 테스트 — 문항 은행(item-bank)의 문항 검색 search.php · 단원 목록 units.php
 //
 // 케이스는 docs/item-bank/BUSINESS-RULES.md 의 규칙 ID(BR-xx)를 겨냥해 설계했다.
 // 케이스 이름 앞의 [BR-xx] 는 겨냥한 규칙이다. 이름이 스냅샷의 키이므로 바꾸지 않는다.
@@ -124,5 +124,12 @@ describe('item-bank · 문항 검색(search.php)', () => {
     it('[BR-04 BR-15 BR-17] 앞뒤 공백 · 대문자가 섞인 키워드 · 정렬 입력', async () => {
       expect(await search({ q: '  곱셈 ', sort: ' TITLE ', dir: ' DESC' })).toMatchSnapshot();
     });
+  });
+});
+
+// 단원 목록 units.php — 새 API 에서는 /api/units/item-counts 로 대응한다(lib/target.mjs PATH_ALIASES).
+describe('item-bank · 단원 목록(units.php)', () => {
+  it('[BR-32 BR-33] 단원 전체 — 공개 문항 수 · 0건 단원 포함 · 학년 · 코드 순', async () => {
+    expect(await fetchNormalized(MODULE, '/units.php')).toMatchSnapshot();
   });
 });

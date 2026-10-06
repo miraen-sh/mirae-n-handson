@@ -46,8 +46,8 @@ class UnitRepositoryTest {
         List<UnitItemCountResponse> counts = unitRepository.countItemsByUnit(ItemStatus.ACTIVE);
 
         assertThat(counts).containsExactly(
-            new UnitItemCountResponse(1, "M5-1", "분수의 덧셈과 뺄셈", 5, 2),
-            new UnitItemCountResponse(3, "M5-3", "소수의 곱셈", 5, 1),
-            new UnitItemCountResponse(4, "M6-1", "분수의 나눗셈", 6, 0));
+            new UnitItemCountResponse("M5-1", "분수의 덧셈과 뺄셈", 5, 2),
+            new UnitItemCountResponse("M5-3", "소수의 곱셈", 5, 1),
+            new UnitItemCountResponse("M6-1", "분수의 나눗셈", 6, 0));
     }
 }

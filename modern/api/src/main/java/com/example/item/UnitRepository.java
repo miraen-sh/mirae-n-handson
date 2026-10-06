@@ -14,7 +14,7 @@ public interface UnitRepository extends JpaRepository<Unit, Integer> {
 
     /** 단원별 문항 수 — 주어진 상태의 문항만 센다. 문항이 없는 단원도 0 으로 포함. 학년, 코드 순. */
     @Query("""
-        select new com.example.item.UnitItemCountResponse(u.id, u.code, u.name, u.grade, count(i))
+        select new com.example.item.UnitItemCountResponse(u.code, u.name, u.grade, count(i))
         from Unit u
         left join Item i on i.unit = u and i.status = :status
         group by u.id, u.code, u.name, u.grade
